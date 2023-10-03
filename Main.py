@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 
-from Car import Car
+from Drone import *
 
 BLACK = (0, 0, 0)
 
@@ -22,8 +22,8 @@ class Simulation:
 
         # Create sprite group
         self.all_sprites = pygame.sprite.Group()
-        self.car = Car(self.window)
-        self.all_sprites.add(self.car)
+        self.drone = Drone(self.window)
+        self.all_sprites.add(self.drone)
 
         # Create game roop
         self.running = True
@@ -44,7 +44,6 @@ class Simulation:
     def update(self):
         # Setup game framerate to 60fps
         self.clock.tick(60)
-        
         
         # Filling the window with black color
         self.window.fill(BLACK) 
