@@ -4,12 +4,14 @@
 
 ### Python version 3.11.6
 
-- To use tensorflow, we need to use python version 3.11.6
+- To use tensorflow, python version must be under 3.11 | standard 2023.11.23.
+- I use the virtual environment
+  - .gitignore -> /venv
 
 ### Library
 
 - Game Engine: pygame
-- math
+- math, sys
 
 ## I. Physics
 
