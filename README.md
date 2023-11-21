@@ -2,7 +2,7 @@
 
 ## Environment
 
-### - Python version 3.11.6
+### Python version 3.11.6
 
 To use tensorflow, we need to use python version 3.11.6
 
