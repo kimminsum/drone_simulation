@@ -14,4 +14,4 @@
 ## I. Physics
 
 - Reference: Verlet Algorithm
-  This algorithm works as tree structure that node is vertex and trunk is side.
+  <br> This algorithm works as tree structure that node is vertex and trunk is side.
