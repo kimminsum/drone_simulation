@@ -10,8 +10,11 @@
 
 ### Library
 
-- Game Engine: pygame
-- math, sys
+| Purpose     | Library Name |
+| ----------- | ------------ |
+| Game Engine | pygame       |
+| Math        | math         |
+| ETC         | sys          |
 
 ## I. Physics
 
