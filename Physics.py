@@ -11,9 +11,12 @@ HEIGHT = 300
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption('Drone Project')
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
+Colour = {
+    "BLACK" : (40, 40, 40),
+    "WHITE" : (255, 255, 255),
+    "RED" : (255, 0, 0),
+    "ORANGE" : (255, 69, 0)
+}
 
 class Particle:
     def __init__(self, x, y, m = 1.0):
@@ -45,7 +48,7 @@ class Particle:
             self.oldy = self.y
             self.x = self.newx
             self.y = self.newy
-        
+
         if self.selected:
             pos = pygame.mouse.get_pos()
             self.x = pos[0]
@@ -56,9 +59,9 @@ class Particle:
         
     def draw(self, surf, size):
         if self.selected == True:
-            color = RED
+            color = Colour["ORANGE"]
         else:
-            color = WHITE
+            color = Colour["WHITE"]
         pygame.draw.circle(surf, color, (int(self.x), int(self.y)), size)
         
 class Constraint:
@@ -74,21 +77,21 @@ class Constraint:
         delta_y = particles[self.index1].y - particles[self.index0].y
         deltaLength = math.sqrt(delta_x * delta_x + delta_y * delta_y)
         diff = (deltaLength - self.restLength)/(deltaLength + 0.001)
-        
+
         if particles[self.index0].fixed == False:
             particles[self.index0].x += 0.5 * diff * delta_x
             particles[self.index0].y += 0.5 * diff * delta_y
         if particles[self.index1].fixed == False:
             particles[self.index1].x -= 0.5 * diff * delta_x
             particles[self.index1].y -= 0.5 * diff * delta_y
-            
+
     def draw(self, surf, size):
         x0 = particles[self.index0].x
         y0 = particles[self.index0].y
         x1 = particles[self.index1].x
         y1 = particles[self.index1].y
-        pygame.draw.line(surf, WHITE, (int(x0), int(y0)), (int(x1), int(y1)), size)
-    
+        pygame.draw.line(surf, Colour["WHITE"], (int(x0), int(y0)), (int(x1), int(y1)), size)
+
 delta_t = 0.1
 NUM_ITER = 10
 mouse = False
@@ -122,7 +125,7 @@ constraints.append(Constraint(0, 2))
 constraints.append(Constraint(1, 3))
 
 while True:
-    screen.fill(BLACK)
+    screen.fill(Colour["BLACK"])
 
     # Particles update
     for i in range(len(particles)):
@@ -148,7 +151,7 @@ while True:
             mouse = True
         if event.type == pygame.MOUSEBUTTONUP:
             mouse = False
-            
+
     if mouse:
         pos = pygame.mouse.get_pos()
         find_particle(pos)
