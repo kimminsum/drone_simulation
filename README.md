@@ -20,3 +20,14 @@
 
 - Reference: Verlet Algorithm
   <br> This algorithm works as tree structure that node is vertex and trunk is side.
+
+## II. Drone Structure
+
+|     | 0   | 1   | 2   | 3   | 4   | 5   |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0   | 0   | 1   | 1   | 1   | 1   | 0   |
+| 1   | 1   | 0   | 1   | 1   | 1   | 1   |
+| 2   | 1   | 1   | 0   | 1   | 1   | 1   |
+| 3   | 1   | 1   | 1   | 0   | 0   | 1   |
+| 4   | 1   | 1   | 1   | 0   | 0   | 1   |
+| 5   | 0   | 1   | 1   | 1   | 1   | 0   |
