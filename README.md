@@ -31,3 +31,9 @@
 | 3   | 1   | 1   | 1   | 0   | 0   | 1   |
 | 4   | 1   | 1   | 1   | 0   | 0   | 1   |
 | 5   | 0   | 1   | 1   | 1   | 1   | 0   |
+
+## III. Input Layer
+
+- left boost
+- right boost
+- angle

@@ -1,13 +1,13 @@
 import pygame
 import math
-import sys
 
 pygame.init()
 
-FPS = 60 # Frames per second setting
 Title = "Drone Project"
-GRAVITY = 9.8 * 2
+
+FPS = 60 # Frames per second setting
 fpsClock = pygame.time.Clock()
+GRAVITY = 9.8 * 2
 
 # Set up the window 
 WIDTH = 500
@@ -30,7 +30,6 @@ Graph = [
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption(Title)
-
 """
 Node
 """
@@ -161,7 +160,8 @@ for row in range(6):
 """
 Rendering
 """
-while True:
+running = True
+while running:
     screen.fill(Colour["BlACK"])
 
     new_x, new_y = (0, 0)
@@ -190,8 +190,7 @@ while True:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse = True
         if event.type == pygame.MOUSEBUTTONUP:
@@ -203,3 +202,5 @@ while True:
 
     pygame.display.update()
     fpsClock.tick(FPS)
+
+pygame.quit()
