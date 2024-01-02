@@ -1,4 +1,6 @@
-import pygame, sys, math
+import pygame
+import math
+import sys
 
 pygame.init()
 
@@ -7,17 +9,9 @@ Title = "Drone Project"
 GRAVITY = 9.8 * 2
 fpsClock = pygame.time.Clock()
 
-<<<<<<< HEAD
 # Set up the window 
 WIDTH = 500
 HEIGHT = 500
-=======
-# Set up the window
-WIDTH = 500
-HEIGHT = 500
-screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
-pygame.display.set_caption('Drone Project')
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
 
 Colour = {
     "BlACK": (0, 0, 0),
@@ -33,40 +27,25 @@ Graph = [
     [1, 1, 1, 0, 0, 1],
     [0, 1, 1, 1, 1, 0]
 ]
-<<<<<<< HEAD
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption(Title)
 
-=======
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
 """
 Node
 """
 class Node:
-<<<<<<< HEAD
     def __init__(self, x, y, colour):
         self.x = x
         self.y = y
         self.oldx = x
-=======
-    def __init__(self, x, y, m = 1.0):
-        self.m = m
-        self.x = x
-        self.y = y
-        self.oldx = x - 10
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
         self.oldy = y
         self.newx = x
         self.newy = y
         self.ax = 0
-<<<<<<< HEAD
         self.ay = GRAVITY
 
         self.colour = colour
-=======
-        self.ay = 9.8
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
 
         self.selected = False
         self.fixed = False
@@ -97,14 +76,14 @@ class Node:
 
     def draw(self, surf, size):
         if self.selected == True:
-<<<<<<< HEAD
             color = self.colour[1]
-=======
-            color = Colour["RED"]
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
         else:
             color = self.colour[0]
         pygame.draw.circle(surf, color, (int(self.x), int(self.y)), size)
+
+    def show_info(self):
+        # print(f"xy: {self.x}, {self.y}")
+        return (self.x, self.y)
 """
 Constraint -> trunk
 """
@@ -136,6 +115,8 @@ class Constraint:
         y1 = Nodes[self.index1].y
         pygame.draw.line(surf, Colour["WHITE"], (int(x0), int(y0)), (int(x1), int(y1)), size)
 
+
+
 def find_Node(pos):
     for i in range(len(Nodes)):
         dx = Nodes[i].x - pos[0]
@@ -150,39 +131,25 @@ mouse = False
 
 # Create Nodes
 Nodes = []
+
 for i in range(4):
     x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
     y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-<<<<<<< HEAD
-=======
-    p = Node(WIDTH * 0.5 + x, HEIGHT * 0.5 + y)
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
-    if i == 0:
+    if i in [0, 1, 2]: # 1, 2 angle x and y
         p = Node(WIDTH * 0.5 + x, HEIGHT * 0.9 + y, (Colour["RED"], Colour["RED"]))
         p.fixed = False
-<<<<<<< HEAD
     else:
         p = Node(WIDTH * 0.5 + x, HEIGHT * 0.9 + y, (Colour["WHITE"], Colour["RED"]))
-=======
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
     Nodes.append(p)
 
 x = 28.28427 * 3
 y = 28.28427
-<<<<<<< HEAD
 p = Node(WIDTH * 0.5 - x, HEIGHT * 0.9 - y, (Colour["WHITE"], Colour["RED"]))
-=======
-p = Node(WIDTH * 0.5 - x, HEIGHT * 0.5 - y)
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
 Nodes.append(p)
 
 x = 28.28427 * 3
 y = -28.28427
-<<<<<<< HEAD
 p = Node(WIDTH * 0.5 - x, HEIGHT * 0.9 - y, (Colour["RED"], Colour["RED"]))
-=======
-p = Node(WIDTH * 0.5 - x, HEIGHT * 0.5 - y)
->>>>>>> 8e0afad4b7964d0d128db40369c2886cfbcd6921
 Nodes.append(p)
 
 constraints = []
@@ -191,13 +158,23 @@ for row in range(6):
     for column in range(row):
         if (Graph[row][column] == 1):
             constraints.append(Constraint(row, column))
-
+"""
+Rendering
+"""
 while True:
     screen.fill(Colour["BlACK"])
 
+    new_x, new_y = (0, 0)
+    x, y = (0, 0)
     # Nodes update
     for i in range(len(Nodes)):
+        if i == 1:
+            new_x, new_y = Nodes[i].show_info()
+        elif i == 2:
+            x, y = Nodes[i].show_info()
+            print(f"angle: {math.degrees(math.atan2(new_y - y, new_x - x))}")
         Nodes[i].update(delta_t)
+
     # Constraints update
     for n in range(NUM_ITER):
         for i in range(len(constraints)):
