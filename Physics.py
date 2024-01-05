@@ -3,15 +3,12 @@ import math
 
 pygame.init()
 
-Title = "Drone Project"
-
 FPS = 60 # Frames per second setting
 fpsClock = pygame.time.Clock()
-GRAVITY = 9.8 * 2
+GRAVITY = 9.8
 
-# Set up the window 
-WIDTH = 500
-HEIGHT = 500
+# Font
+font = pygame.font.Font(None, 24)
 
 Colour = {
     "BlACK": (0, 0, 0),
@@ -27,6 +24,15 @@ Graph = [
     [1, 1, 1, 0, 0, 1],
     [0, 1, 1, 1, 1, 0]
 ]
+
+angle = 90
+left_boost = 9.8 * 6
+right_boost = 9.8 * 6
+
+Title = "Drone Project"
+# Set up the window 
+WIDTH = 500
+HEIGHT = 500
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 pygame.display.set_caption(Title)
@@ -81,8 +87,11 @@ class Node:
         pygame.draw.circle(surf, color, (int(self.x), int(self.y)), size)
 
     def show_info(self):
-        # print(f"xy: {self.x}, {self.y}")
         return (self.x, self.y)
+    
+    def change_boost(self, ax, ay):
+        self.ax = ax
+        self.ay = ay # GRAVITY - ay
 """
 Constraint -> trunk
 """
@@ -124,6 +133,12 @@ def find_Node(pos):
             Nodes[i].selected = True
             break
 
+def show_info(title: str, data: float, x: int, y: int):
+    text = font.render(f"{title}: {data}", True, Colour["WHITE"])
+    textRect = text.get_rect()
+    textRect.topleft = (x, y)
+    screen.blit(text, textRect)
+
 delta_t = 0.1
 NUM_ITER = 10
 mouse = False
@@ -134,7 +149,7 @@ Nodes = []
 for i in range(4):
     x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
     y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-    if i in [0, 1, 2]: # 1, 2 angle x and y
+    if i in [0]: # 1, 2 angle x and y
         p = Node(WIDTH * 0.5 + x, HEIGHT * 0.9 + y, (Colour["RED"], Colour["RED"]))
         p.fixed = False
     else:
@@ -164,17 +179,6 @@ running = True
 while running:
     screen.fill(Colour["BlACK"])
 
-    new_x, new_y = (0, 0)
-    x, y = (0, 0)
-    # Nodes update
-    for i in range(len(Nodes)):
-        if i == 1:
-            new_x, new_y = Nodes[i].show_info()
-        elif i == 2:
-            x, y = Nodes[i].show_info()
-            print(f"angle: {math.degrees(math.atan2(new_y - y, new_x - x))}")
-        Nodes[i].update(delta_t)
-
     # Constraints update
     for n in range(NUM_ITER):
         for i in range(len(constraints)):
@@ -187,6 +191,24 @@ while running:
     for i in range(len(constraints)):
         constraints[i].draw(screen, 1)
 
+    new_x, new_y = (0, 0)
+    x, y = (0, 0)
+
+    # Nodes update
+    for i in range(len(Nodes)):
+        if i == 1:
+            new_x, new_y = Nodes[i].show_info()
+            vec_x = left_boost * math.cos(angle)
+            vec_y = GRAVITY - left_boost * math.sin(angle)
+            # Nodes[i].change_boost(vec_x, vec_y)
+        elif i == 2:
+            x, y = Nodes[i].show_info()
+            angle = math.atan2(new_y - y, new_x - x)
+        vec_x = right_boost * math.cos(angle)
+        vec_y = GRAVITY - right_boost * math.sin(angle)
+        Nodes[i].change_boost(vec_x, vec_y)
+
+        Nodes[i].update(delta_t)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -199,6 +221,10 @@ while running:
     if mouse:
         pos = pygame.mouse.get_pos()
         find_Node(pos)
+
+    show_info("Angle", round(math.degrees(angle), 3), 20, 20)
+    show_info("LB", round(left_boost, 3), 20, 40)
+    show_info("RB", round(right_boost, 3), 20, 60)
 
     pygame.display.update()
     fpsClock.tick(FPS)
