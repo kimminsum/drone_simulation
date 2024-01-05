@@ -33,7 +33,7 @@ class Node:
         self.m = m
         self.x = x
         self.y = y
-        self.oldx = x - 10
+        self.oldx = x
         self.oldy = y
         self.newx = x
         self.newy = y
@@ -121,19 +121,19 @@ Nodes = []
 for i in range(4):
     x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
     y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-    p = Node(WIDTH * 0.5 + x, HEIGHT * 0.5 + y)
+    p = Node(WIDTH * 0.5 + x, HEIGHT * 0.9 + y)
     if i == 0:
         p.fixed = False
     Nodes.append(p)
 
 x = 28.28427 * 3
 y = 28.28427
-p = Node(WIDTH * 0.5 - x, HEIGHT * 0.5 - y)
+p = Node(WIDTH * 0.5 - x, HEIGHT * 0.9 - y)
 Nodes.append(p)
 
 x = 28.28427 * 3
 y = -28.28427
-p = Node(WIDTH * 0.5 - x, HEIGHT * 0.5 - y)
+p = Node(WIDTH * 0.5 - x, HEIGHT * 0.9 - y)
 Nodes.append(p)
 
 constraints = []
