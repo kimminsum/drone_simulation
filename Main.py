@@ -3,19 +3,31 @@ import math
 
 pygame.init()
 
-FPS = 60 # Frames per second setting
-fpsClock = pygame.time.Clock()
-GRAVITY = 9.8
-START_HEIGHT = 0.93
-# Font
-font = pygame.font.Font(None, 24)
 
+Title = "Drone Project"
+pygame.display.set_caption(Title)
+
+# Set up the window 
+WIDTH = 500
+HEIGHT = 500
+screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
+
+# Frame
+FPS = 60
+fpsClock = pygame.time.Clock()
+
+"""
+Drone Structure
+"""
+# Colour
 Colour = {
     "BlACK": (0, 0, 0),
     "WHITE": (255, 255, 255),
     "RED": (255, 0, 0)
 }
 
+# Constraints number
+NUM_ITER = 10
 Graph = [
     [0, 1, 1, 1, 1, 0],
     [1, 0, 1, 1, 1, 1],
@@ -25,17 +37,24 @@ Graph = [
     [0, 1, 1, 1, 1, 0]
 ]
 
-angle = 90
+Nodes = []
+constraints = []
+
+# Movement
+GRAVITY = 9.8
+START_HEIGHT = 0.93 # topside is standard
+REACTION = 0.02 # reaction rate; the more bigger, the less reaction
+
+angle = 90 # initial angle
 left_boost = 9.8 * 4
 right_boost = 9.8 * 4
 
-Title = "Drone Project"
-# Set up the window 
-WIDTH = 500
-HEIGHT = 500
+delta_t = 0.1
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
-pygame.display.set_caption(Title)
+mouse = False # clicked ? True : False
+
+# Font
+font = pygame.font.Font(None, 24)
 """
 Node
 """
@@ -59,9 +78,9 @@ class Node:
         if self.fixed == False:
             # Collision Process
             if self.x < 0 or self.x > WIDTH:
-                self.x, self.oldx = self.oldx, self.x
+                self.x, self.oldx = self.oldx * (1 - REACTION), self.x
             if self.y < 0 or self.y > HEIGHT:
-                self.y, self.oldy = self.oldy, self.y
+                self.y, self.oldy = self.oldy * (1 - REACTION), self.y
 
             # Verlet Integration
             self.newx = 2.0 * self.x - self.oldx + self.ax * delta_t * delta_t 
@@ -88,7 +107,7 @@ class Node:
 
     def show_info(self):
         return (self.x, self.y)
-    
+
     def change_boost(self, ax, ay):
         self.ax = ax
         self.ay = ay # GRAVITY - ay
@@ -138,12 +157,6 @@ def show_info(title: str, data: float, x: int, y: int):
     textRect.topleft = (x, y)
     screen.blit(text, textRect)
 
-delta_t = 0.1
-NUM_ITER = 10
-mouse = False
-
-# Create Nodes
-Nodes = []
 
 for i in range(4):
     x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
@@ -165,7 +178,6 @@ y = -28.28427
 p = Node(WIDTH * 0.5 - x, HEIGHT * START_HEIGHT - y, (Colour["RED"], Colour["RED"]))
 Nodes.append(p)
 
-constraints = []
 
 for row in range(6):
     for column in range(row):
