@@ -2,10 +2,10 @@ import pygame
 import math
 
 # Window setup
-WIDTH = 400
+WIDTH = 800
 HEIGHT = 600
 GRAVITY = 9.8
-START_HEIGHT = 0.93 # topside is standard
+START_HEIGHT = 0.9 # topside is standard
 REACTION = 0.0 # reaction rate; the more bigger, the less reaction
 
 # Colour
@@ -33,15 +33,17 @@ class Node:
 
         self.selected = False
         self.fixed = False
+        self.collision = False
 
     def update(self, delta_t):
         if self.fixed == False:
             # Collision Process
             if self.x < 0 or self.x > WIDTH:
                 self.x, self.oldx = self.oldx * (1 - REACTION), self.x
+                self.collision = True
             if self.y < 0 or self.y > HEIGHT:
                 self.y, self.oldy = self.oldy * (1 - REACTION), self.y
-
+                self.collision = True
             # Verlet Integration
             self.newx = 2.0 * self.x - self.oldx + self.ax * delta_t * delta_t 
             self.newy = 2.0 * self.y - self.oldy + self.ay * delta_t * delta_t 
@@ -57,8 +59,11 @@ class Node:
             color = self.colour[0]
         pygame.draw.circle(surf, color, (int(self.x), int(self.y)), size)
 
-    def show_info(self):
+    def get_info(self):
         return (self.x, self.y)
+
+    def get_collision(self):
+        return self.collision
 
     def change_boost(self, ax, ay):
         self.ax = ax
@@ -139,6 +144,8 @@ class Drone:
         self.reset()
 
     def reset(self):
+        self.Nodes = []
+        self.constraints = []
         # Set nodes' position
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
@@ -173,7 +180,24 @@ class Drone:
         textRect = text.get_rect()
         textRect.topleft = (x, y)
         self.screen.blit(text, textRect)
+    """
+    Next step
+    """
+    def go_up(self):
+        self.right_boost = 9.8 * 4
+        self.left_boost = 9.8 * 4
 
+    def go_right(self):
+        self.right_boost = 9.8
+        self.left_boost = 9.8 * 3
+
+    def go_left(self):
+        self.right_boost = 9.8 * 3
+        self.left_boost = 9.8
+
+    def go_stop(self):
+        self.right_boost = 0
+        self.left_boost = 0
     """
     Rendering
     """
@@ -200,12 +224,13 @@ class Drone:
             x, y = (0, 0)
 
             # Nodes update
-            for i in range(len(self.Nodes)):
+            for i, node in enumerate(self.Nodes):
                 # get angle between two nodes; index number 1 and 2.
                 if i == 1:
-                    new_x, new_y = self.Nodes[i].show_info()
+                    new_x, new_y = node.get_info()
                 elif i == 2:
-                    x, y = self.Nodes[i].show_info()
+                    x, y = node.get_info()
+                    # print(f"Center: {new_x} {new_y - 28}")
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
 
                 # set right boost vector
@@ -213,20 +238,31 @@ class Drone:
                     vec_x = self.right_boost * math.sin(self.angle)
                     # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
                     vec_y = GRAVITY - self.right_boost * math.cos(self.angle)
-                    self.Nodes[i].change_boost(vec_x, vec_y)
+                    node.change_boost(vec_x, vec_y)
                 # set left boost vector
                 elif i == 5:
                     vec_x = self.left_boost * math.sin(self.angle)
                     # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
                     vec_y = GRAVITY - self.left_boost * math.cos(self.angle)
-                    self.Nodes[i].change_boost(vec_x, vec_y)
+                    node.change_boost(vec_x, vec_y)
 
-                self.Nodes[i].update(self.delta_t) # update every change
+                node.update(self.delta_t) # update every change
+                if node.get_collision():
+                    self.reset()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
+                # key events
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.go_up()
+                    elif event.key == pygame.K_DOWN:
+                        self.go_stop()
+                    elif event.key == pygame.K_RIGHT:
+                        self.go_right()
+                    elif event.key == pygame.K_LEFT:
+                        self.go_left()
 
             self.show_info("Angle", round(math.degrees(self.angle), 3), 20, 20) # show angle infomation; degrees
             self.show_info("LB", round(self.left_boost, 3), 20, 40) # show left boost information
