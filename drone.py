@@ -4,10 +4,11 @@ import math
 # Window setup
 WIDTH = 800
 HEIGHT = 600
-GRAVITY = 9.8
+GRAVITY = 5
 START_HEIGHT = 0.9 # topside is standard
 REACTION = 0.0 # reaction rate; the more bigger, the less reaction
 
+BOOST = 20
 # Colour
 Colour = {
     "BlACK": (0, 0, 0),
@@ -133,8 +134,8 @@ class Drone:
         Movement
         """
         self.angle = 0 # initial angle
-        self.left_boost = 9.8 * 3.7
-        self.right_boost = 9.8 * 3.7
+        self.left_boost = BOOST
+        self.right_boost = BOOST
 
         self.delta_t = 0.1
         self.Nodes = []
@@ -146,6 +147,10 @@ class Drone:
     def reset(self):
         self.Nodes = []
         self.constraints = []
+
+        self.angle = 0
+        self.left_boost = BOOST
+        self.right_boost = BOOST
         # Set nodes' position
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
@@ -184,16 +189,16 @@ class Drone:
     Next step
     """
     def go_up(self):
-        self.right_boost = 9.8 * 4
-        self.left_boost = 9.8 * 4
+        self.right_boost = BOOST
+        self.left_boost = BOOST
 
     def go_right(self):
-        self.right_boost = 9.8
-        self.left_boost = 9.8 * 3
+        self.right_boost = BOOST / 2
+        self.left_boost = BOOST
 
     def go_left(self):
-        self.right_boost = 9.8 * 3
-        self.left_boost = 9.8
+        self.right_boost = BOOST
+        self.left_boost = BOOST / 2
 
     def go_stop(self):
         self.right_boost = 0
