@@ -252,7 +252,9 @@ class Drone:
                     node.change_boost(vec_x, vec_y)
 
                 node.update(self.delta_t) # update every change
-                if node.get_collision():
+
+                # reset condition
+                if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
                     self.reset()
 
             for event in pygame.event.get():
