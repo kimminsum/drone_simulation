@@ -145,6 +145,15 @@ class Drone:
         self.reset()
 
     def reset(self):
+        """
+        [ direction ]
+        0 : UP # start dircetion
+        1 : STOP
+        2 : LEFT
+        3 : RIGHT
+        """
+        self.direction = 0
+
         self.Nodes = []
         self.constraints = []
 
@@ -257,23 +266,36 @@ class Drone:
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
                     self.reset()
 
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 # key events
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
-                        self.go_up()
+                        self.direction = 0
                     elif event.key == pygame.K_DOWN:
-                        self.go_stop()
-                    elif event.key == pygame.K_RIGHT:
-                        self.go_right()
+                        self.direction = 1
                     elif event.key == pygame.K_LEFT:
-                        self.go_left()
+                        self.direction = 2
+                    elif event.key == pygame.K_RIGHT:
+                        self.direction = 3
 
-            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, 20) # show angle infomation; degrees
-            self.show_info("LB", round(self.left_boost, 3), 20, 40) # show left boost information
-            self.show_info("RB", round(self.right_boost, 3), 20, 60) # show right boost information
+            if self.direction == 0:
+                self.go_up()
+            elif self.direction == 1:
+                self.go_stop()
+            elif self.direction == 2:
+                self.go_left()
+            elif self.direction == 3:
+                self.go_right()
+
+            txt_margin = 20
+            self.show_info("Score", 0, 20, txt_margin)
+            self.show_info("Fitness", 0, 20, txt_margin * 2)
+            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, txt_margin * 3) # show angle infomation; degrees
+            self.show_info("LB", round(self.left_boost, 3), 20, txt_margin * 4) # show left boost information
+            self.show_info("RB", round(self.right_boost, 3), 20, txt_margin * 5) # show right boost information
 
             pygame.display.update()
             self.fpsClock.tick(self.FPS)
