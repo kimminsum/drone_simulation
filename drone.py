@@ -1,5 +1,4 @@
 import pygame
-import random
 import math
 
 # Window setup
@@ -71,7 +70,7 @@ class Node:
         self.ax = ax
         self.ay = ay
 """
-Constraint
+Constraint -> trunk
 connect nodes by graph.
 """
 class Constraint:
@@ -102,23 +101,6 @@ class Constraint:
         x1 = self.Nodes[self.index1].x
         y1 = self.Nodes[self.index1].y
         pygame.draw.line(surf, Colour["WHITE"], (int(x0), int(y0)), (int(x1), int(y1)), size)
-"""
-Target
-reward and drone's destination
-"""
-class Target:
-    def __init__(self, x, y, radius):
-        self.x = x
-        self.y = y
-        self.MARGIN = 80
-        self.radius = radius
-
-    def change_position(self):
-        self.x = random.randint(self.MARGIN, WIDTH - self.MARGIN)
-        self.y = random.randint(self.MARGIN, HEIGHT - self.MARGIN)
-
-    def draw(self, surf):
-        pygame.draw.circle(surf, Colour["RED"], (int(self.x), int(self.y)), self.radius, 2)
 
 
 class Drone:
@@ -127,11 +109,13 @@ class Drone:
 
         Title = "Drone Project"
         pygame.display.set_caption(Title)
+
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
         # Clock
         self.FPS = 60
         self.fpsClock = pygame.time.Clock()
+
         """
         Drone Structure
         """
@@ -146,27 +130,41 @@ class Drone:
             [1, 1, 1, 0, 0, 1],
             [0, 1, 1, 1, 1, 0]
         ]
-
-        self.delta_t = 0.1
-        # Font
-        self.font = pygame.font.Font(None, 22)
-        self.reset()
-
-    def reset(self):
-        self.Nodes = []
-        self.constraints = []
-        self.target = Target(random.randint(80, WIDTH - 80), random.randint(80, HEIGHT - 80), 30)
         """
         Movement
         """
         self.angle = 0 # initial angle
         self.left_boost = BOOST
         self.right_boost = BOOST
+
+        self.delta_t = 0.1
+        self.Nodes = []
+        self.constraints = []
+        # Font
+        self.font = pygame.font.Font(None, 22)
+        self.reset()
+
+    def reset(self):
+        """
+        [ direction ]
+        0 : UP # start dircetion
+        1 : STOP
+        2 : LEFT
+        3 : RIGHT
+        """
+        self.direction = 0
+
+        self.Nodes = []
+        self.constraints = []
+
+        self.angle = 0
+        self.left_boost = BOOST
+        self.right_boost = BOOST
         # Set nodes' position
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
             y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-            if i == 0: # 1, 2 angle x and y
+            if i in [0]: # 1, 2 angle x and y
                 p = Node(WIDTH * 0.5 + x, HEIGHT * START_HEIGHT + y, (Colour["RED"], Colour["RED"]))
                 p.fixed = False
             else:
@@ -189,13 +187,7 @@ class Drone:
                 if (self.Graph[row][column] == 1):
                     self.constraints.append(Constraint(row, column, self.Nodes))
     """
-    Show infomation on window.
-
-    [ show the following infomation ]
-    - Score (not yet)
-    - Angle
-    - Left boost
-    - Right boost
+    Show info on window.
     """
     def show_info(self, title: str, data: float, x: int, y: int):
         text = self.font.render(f"{title}: {data}", True, Colour["WHITE"])
@@ -227,21 +219,23 @@ class Drone:
         running = True
         while running:
             self.screen.fill(Colour["GRAY"]) # make background colour black.
+
+            # Constraints update
+            for n in range(self.NUM_ITER):
+                for i in range(len(self.constraints)):
+                    self.constraints[i].update()
             """
             Draw objects
             """
-            # Target draw
-            self.target.draw(self.screen)
-            # Constraints draw
-            for i in range(len(self.constraints)):
-                self.constraints[i].draw(self.screen, 1)
             # Nodes draw
             for i in range(len(self.Nodes)):
                 self.Nodes[i].draw(self.screen, 4)
+            # Constraints draw
+            for i in range(len(self.constraints)):
+                self.constraints[i].draw(self.screen, 1)
 
             new_x, new_y = (0, 0)
             x, y = (0, 0)
-            centre_x, centre_y = (0, 0)
 
             # Nodes update
             for i, node in enumerate(self.Nodes):
@@ -250,8 +244,7 @@ class Drone:
                     new_x, new_y = node.get_info()
                 elif i == 2:
                     x, y = node.get_info()
-                    centre_x, centre_y = (new_x, new_y - 28)
-                    # print(f"Center: {centre_x} {centre_y}")
+                    # print(f"Center: {new_x} {new_y - 28}")
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
 
                 # set right boost vector
@@ -269,14 +262,10 @@ class Drone:
 
                 node.update(self.delta_t) # update every change
 
-                # loss and reset condition
+                # reset condition
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
                     self.reset()
 
-            # Constraints update
-            for _ in range(self.NUM_ITER):
-                for i in range(len(self.constraints)):
-                    self.constraints[i].update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -284,17 +273,29 @@ class Drone:
                 # key events
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
-                        self.go_up()
+                        self.direction = 0
                     elif event.key == pygame.K_DOWN:
-                        self.go_stop()
-                    elif event.key == pygame.K_RIGHT:
-                        self.go_right()
+                        self.direction = 1
                     elif event.key == pygame.K_LEFT:
-                        self.go_left()
+                        self.direction = 2
+                    elif event.key == pygame.K_RIGHT:
+                        self.direction = 3
 
-            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, 20) # show angle infomation; degrees
-            self.show_info("LB", round(self.left_boost, 3), 20, 40) # show left boost information
-            self.show_info("RB", round(self.right_boost, 3), 20, 60) # show right boost information
+            if self.direction == 0:
+                self.go_up()
+            elif self.direction == 1:
+                self.go_stop()
+            elif self.direction == 2:
+                self.go_left()
+            elif self.direction == 3:
+                self.go_right()
+
+            txt_margin = 20
+            self.show_info("Score", 0, 20, txt_margin)
+            self.show_info("Fitness", 0, 20, txt_margin * 2)
+            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, txt_margin * 3) # show angle infomation; degrees
+            self.show_info("LB", round(self.left_boost, 3), 20, txt_margin * 4) # show left boost information
+            self.show_info("RB", round(self.right_boost, 3), 20, txt_margin * 5) # show right boost information
 
             pygame.display.update()
             self.fpsClock.tick(self.FPS)
