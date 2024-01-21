@@ -1,4 +1,5 @@
 import pygame
+import random
 import math
 
 # Window setup
@@ -101,16 +102,31 @@ class Constraint:
         x1 = self.Nodes[self.index1].x
         y1 = self.Nodes[self.index1].y
         pygame.draw.line(surf, Colour["WHITE"], (int(x0), int(y0)), (int(x1), int(y1)), size)
+"""
+Target
+drone's final destination and reward when it approach.
+"""
+class Target:
+    def __init__(self, x, y, radius):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self._LIMIT = 70
+
+    # change location randomly
+    def change_location(self):
+        self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
+        self.y = random.randint(self._LIMIT, WIDTH - self._LIMIT)
+
+    def draw(self, surf):
+        pygame.draw.circle(surf, Colour["RED"], (int(self.x), int(self.y)), self.radius, 2)
 
 
 class Drone:
-    def __init__(self):
-        pygame.init()
-
-        Title = "Drone Project"
-        pygame.display.set_caption(Title)
-
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
+    def __init__(self, screen):
+        self.screen = screen
+        # Font
+        self.font = pygame.font.Font(None, 22)
 
         # Clock
         self.FPS = 60
@@ -140,17 +156,16 @@ class Drone:
         self.delta_t = 0.1
         self.Nodes = []
         self.constraints = []
-        # Font
-        self.font = pygame.font.Font(None, 22)
+
         self.reset()
 
     def reset(self):
         """
         [ direction ]
-        0 : UP # start dircetion
-        1 : STOP
-        2 : LEFT
-        3 : RIGHT
+        0 : UP    [0, 0, 0, 1] # start dircetion
+        1 : STOP  [0, 0, 1, 0]
+        2 : LEFT  [0, 1, 0, 0]
+        3 : RIGHT [1, 0, 0, 0]
         """
         self.direction = 0
 
@@ -270,16 +285,18 @@ class Drone:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                # key events
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.direction = 0
-                    elif event.key == pygame.K_DOWN:
-                        self.direction = 1
-                    elif event.key == pygame.K_LEFT:
-                        self.direction = 2
-                    elif event.key == pygame.K_RIGHT:
-                        self.direction = 3
+                
+                if __name__=="__main__":
+                    # key events
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_UP:
+                            self.direction = 0
+                        elif event.key == pygame.K_DOWN:
+                            self.direction = 1
+                        elif event.key == pygame.K_LEFT:
+                            self.direction = 2
+                        elif event.key == pygame.K_RIGHT:
+                            self.direction = 3
 
             if self.direction == 0:
                 self.go_up()
@@ -304,5 +321,13 @@ class Drone:
 
 
 if __name__=="__main__":
-    drone = Drone()
+    pygame.init()
+    pygame.font.init()
+
+    Title = "Drone Project (User)"
+    pygame.display.set_caption(Title)
+
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
+
+    drone = Drone(screen)
     drone.run()
