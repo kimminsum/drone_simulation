@@ -2,9 +2,13 @@
 
 ## Environment
 
-### Python version 3.11.6
+### Python version 3.8.0
 
 - To use tensorflow, python version must be under 3.11 | standard 2023.11.23.
+  I tried to make the tensorflow model, but it made error I didn't solve.
+  So, I decide to make the model by numpy.
+  As a result...we just use python version over 3.
+
 - I use the virtual environment
   - .gitignore -> /venv
 

@@ -95,6 +95,7 @@ class Constraint:
         if self.Nodes[self.index1].fixed == False:
             self.Nodes[self.index1].x -= 0.5 * diff * delta_x
             self.Nodes[self.index1].y -= 0.5 * diff * delta_y
+
     # draw line between two points.
     def draw(self, surf, size):
         x0 = self.Nodes[self.index0].x
@@ -160,14 +161,7 @@ class Drone:
         self.reset()
 
     def reset(self):
-        """
-        [ direction ]
-        0 : UP    [0, 0, 0, 1] # start dircetion
-        1 : STOP  [0, 0, 1, 0]
-        2 : LEFT  [0, 1, 0, 0]
-        3 : RIGHT [1, 0, 0, 0]
-        """
-        self.direction = 0
+        self.direction = 0 # Start direction is UP.
 
         self.Nodes = []
         self.constraints = []
@@ -211,6 +205,12 @@ class Drone:
         self.screen.blit(text, textRect)
     """
     Next step
+
+    [ direction ]
+    0 : UP    [0, 0, 0, 1] # start dircetion
+    1 : STOP  [0, 0, 1, 0]
+    2 : LEFT  [0, 1, 0, 0]
+    3 : RIGHT [1, 0, 0, 0]
     """
     def go_up(self):
         self.right_boost = BOOST
@@ -227,97 +227,103 @@ class Drone:
     def go_stop(self):
         self.right_boost = 0
         self.left_boost = 0
-    """
-    Rendering
-    """
+
     def run(self):
         running = True
         while running:
-            self.screen.fill(Colour["GRAY"]) # make background colour black.
+            self.fpsClock.tick(self.FPS)
 
-            # Constraints update
-            for n in range(self.NUM_ITER):
-                for i in range(len(self.constraints)):
-                    self.constraints[i].update()
-            """
-            Draw objects
-            """
-            # Nodes draw
-            for i in range(len(self.Nodes)):
-                self.Nodes[i].draw(self.screen, 4)
-            # Constraints draw
-            for i in range(len(self.constraints)):
-                self.constraints[i].draw(self.screen, 1)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                # key events
+                if __name__=="__main__" and event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.direction = 0
+                    elif event.key == pygame.K_DOWN:
+                        self.direction = 1
+                    elif event.key == pygame.K_LEFT:
+                        self.direction = 2
+                    elif event.key == pygame.K_RIGHT:
+                        self.direction = 3
+
+            if self.direction == 0:   # UP
+                self.go_up()
+            elif self.direction == 1: # STOP
+                self.go_stop()
+            elif self.direction == 2: # LEFT
+                self.go_left()
+            elif self.direction == 3: # RIGHT
+                self.go_right()
+
 
             new_x, new_y = (0, 0)
             x, y = (0, 0)
+            center_x, center_y = (0, 0)
+
+            # Constraints update
+            for _ in range(self.NUM_ITER):
+                for i in range(len(self.constraints)):
+                    self.constraints[i].update()
 
             # Nodes update
             for i, node in enumerate(self.Nodes):
+                # reset condition
+                # -40 < angle < 40
+                if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
+                    self.reset()
+                
                 # get angle between two nodes; index number 1 and 2.
                 if i == 1:
                     new_x, new_y = node.get_info()
                 elif i == 2:
                     x, y = node.get_info()
+                    center_x = new_x
+                    center_y = new_y - 28
                     # print(f"Center: {new_x} {new_y - 28}")
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
 
-                # set right boost vector
+                # Set right boost vector.
                 if i == 0:
                     vec_x = self.right_boost * math.sin(self.angle)
                     # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
                     vec_y = GRAVITY - self.right_boost * math.cos(self.angle)
                     node.change_boost(vec_x, vec_y)
-                # set left boost vector
+
+                # Set left boost vector.
                 elif i == 5:
                     vec_x = self.left_boost * math.sin(self.angle)
                     # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
                     vec_y = GRAVITY - self.left_boost * math.cos(self.angle)
                     node.change_boost(vec_x, vec_y)
 
-                node.update(self.delta_t) # update every change
-
-                # reset condition
-                if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
-                    self.reset()
+                node.update(self.delta_t)
 
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                
-                if __name__=="__main__":
-                    # key events
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_UP:
-                            self.direction = 0
-                        elif event.key == pygame.K_DOWN:
-                            self.direction = 1
-                        elif event.key == pygame.K_LEFT:
-                            self.direction = 2
-                        elif event.key == pygame.K_RIGHT:
-                            self.direction = 3
+            # Draw background
+            self.screen.fill(Colour["GRAY"])
 
-            if self.direction == 0:
-                self.go_up()
-            elif self.direction == 1:
-                self.go_stop()
-            elif self.direction == 2:
-                self.go_left()
-            elif self.direction == 3:
-                self.go_right()
+            # Draw constraints.
+            for i in range(len(self.constraints)):
+                self.constraints[i].draw(self.screen, 1)
+            
+            # Draw nodes.
+            for i in range(len(self.Nodes)):
+                self.Nodes[i].draw(self.screen, 4)
 
+
+            # Show parameters's information
             txt_margin = 20
             self.show_info("Score", 0, 20, txt_margin)
             self.show_info("Fitness", 0, 20, txt_margin * 2)
-            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, txt_margin * 3) # show angle infomation; degrees
-            self.show_info("LB", round(self.left_boost, 3), 20, txt_margin * 4) # show left boost information
-            self.show_info("RB", round(self.right_boost, 3), 20, txt_margin * 5) # show right boost information
+            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, txt_margin * 3) # angle; degrees
+            self.show_info("LB", round(self.left_boost, 3), 20, txt_margin * 4)             # left boost
+            self.show_info("RB", round(self.right_boost, 3), 20, txt_margin * 5)            # right boost
 
             pygame.display.update()
-            self.fpsClock.tick(self.FPS)
 
-        pygame.quit() # end up program.
+        pygame.quit()
 
 
 if __name__=="__main__":
