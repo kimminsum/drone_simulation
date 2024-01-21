@@ -10,6 +10,7 @@ START_HEIGHT = 0.9 # topside is standard
 REACTION = 0.0 # reaction rate; the more bigger, the less reaction
 
 BOOST = 20
+
 # Colour
 Colour = {
     "BlACK": (0, 0, 0),
@@ -17,6 +18,8 @@ Colour = {
     "WHITE": (255, 255, 255),
     "RED": (255, 0, 0)
 }
+
+
 """
 Node
 """
@@ -70,8 +73,11 @@ class Node:
     def change_boost(self, ax, ay):
         self.ax = ax
         self.ay = ay
+
+
 """
-Constraint -> trunk
+Constraint
+
 connect nodes by graph.
 """
 class Constraint:
@@ -96,47 +102,52 @@ class Constraint:
             self.Nodes[self.index1].x -= 0.5 * diff * delta_x
             self.Nodes[self.index1].y -= 0.5 * diff * delta_y
 
-    # draw line between two points.
+    # Draw a line between two points.
     def draw(self, surf, size):
         x0 = self.Nodes[self.index0].x
         y0 = self.Nodes[self.index0].y
         x1 = self.Nodes[self.index1].x
         y1 = self.Nodes[self.index1].y
+
         pygame.draw.line(surf, Colour["WHITE"], (int(x0), int(y0)), (int(x1), int(y1)), size)
+
+
 """
 Target
+
 drone's final destination and reward when it approach.
 """
 class Target:
-    def __init__(self, x, y, radius):
-        self.x = x
-        self.y = y
-        self.radius = radius
-        self._LIMIT = 70
+    def __init__(self, radius):
+        self._LIMIT = 100
 
-    # change location randomly
+        self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
+        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT)
+        self.radius = radius
+
+    # Change location randomly
     def change_location(self):
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(self._LIMIT, WIDTH - self._LIMIT)
+        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT)
 
     def draw(self, surf):
         pygame.draw.circle(surf, Colour["RED"], (int(self.x), int(self.y)), self.radius, 2)
 
 
+
+
 class Drone:
     def __init__(self, screen):
         self.screen = screen
-        # Font
+        
+        # font
         self.font = pygame.font.Font(None, 22)
 
-        # Clock
+        # clock
         self.FPS = 60
         self.fpsClock = pygame.time.Clock()
 
-        """
-        Drone Structure
-        """
-        # Constraints number
+        # constraint number
         self.NUM_ITER = 10
 
         self.Graph = [
@@ -147,16 +158,7 @@ class Drone:
             [1, 1, 1, 0, 0, 1],
             [0, 1, 1, 1, 1, 0]
         ]
-        """
-        Movement
-        """
-        self.angle = 0 # initial angle
-        self.left_boost = BOOST
-        self.right_boost = BOOST
-
         self.delta_t = 0.1
-        self.Nodes = []
-        self.constraints = []
 
         self.reset()
 
@@ -165,19 +167,23 @@ class Drone:
 
         self.Nodes = []
         self.constraints = []
+        self.target = Target(30)
 
         self.angle = 0
         self.left_boost = BOOST
         self.right_boost = BOOST
+
         # Set nodes' position
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
             y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-            if i in [0]: # 1, 2 angle x and y
+    
+            if i == 0: # 1, 2 angle x and y
                 p = Node(WIDTH * 0.5 + x, HEIGHT * START_HEIGHT + y, (Colour["RED"], Colour["RED"]))
                 p.fixed = False
             else:
                 p = Node(WIDTH * 0.5 + x, HEIGHT * START_HEIGHT + y, (Colour["WHITE"], Colour["RED"]))
+            
             self.Nodes.append(p)
 
         x = 28.28427 * 3
@@ -195,9 +201,8 @@ class Drone:
             for column in range(row):
                 if (self.Graph[row][column] == 1):
                     self.constraints.append(Constraint(row, column, self.Nodes))
-    """
-    Show info on window.
-    """
+
+    # Show infomation on window.
     def show_info(self, title: str, data: float, x: int, y: int):
         text = self.font.render(f"{title}: {data}", True, Colour["WHITE"])
         textRect = text.get_rect()
@@ -216,17 +221,18 @@ class Drone:
         self.right_boost = BOOST
         self.left_boost = BOOST
 
-    def go_right(self):
-        self.right_boost = BOOST / 2
-        self.left_boost = BOOST
+    def go_stop(self):
+        self.right_boost = 0
+        self.left_boost = 0
 
     def go_left(self):
         self.right_boost = BOOST
         self.left_boost = BOOST / 2
 
-    def go_stop(self):
-        self.right_boost = 0
-        self.left_boost = 0
+    def go_right(self):
+        self.right_boost = BOOST / 2
+        self.left_boost = BOOST
+
 
     def run(self):
         running = True
@@ -262,27 +268,28 @@ class Drone:
             x, y = (0, 0)
             center_x, center_y = (0, 0)
 
-            # Constraints update
+
+            # Update constraints
             for _ in range(self.NUM_ITER):
                 for i in range(len(self.constraints)):
                     self.constraints[i].update()
 
-            # Nodes update
+            # Update nodes
             for i, node in enumerate(self.Nodes):
-                # reset condition
+                # Reset condition
                 # -40 < angle < 40
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
                     self.reset()
                 
-                # get angle between two nodes; index number 1 and 2.
+                # Get angle between two nodes; index number 1 and 2.
                 if i == 1:
                     new_x, new_y = node.get_info()
-                elif i == 2:
-                    x, y = node.get_info()
                     center_x = new_x
                     center_y = new_y - 28
-                    # print(f"Center: {new_x} {new_y - 28}")
+                elif i == 2:
+                    x, y = node.get_info()
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
+
 
                 # Set right boost vector.
                 if i == 0:
@@ -304,16 +311,18 @@ class Drone:
             # Draw background
             self.screen.fill(Colour["GRAY"])
 
-            # Draw constraints.
+            # Draw constraints
             for i in range(len(self.constraints)):
                 self.constraints[i].draw(self.screen, 1)
-            
-            # Draw nodes.
+
+            # Draw nodes
             for i in range(len(self.Nodes)):
                 self.Nodes[i].draw(self.screen, 4)
 
+            # Draw target
+            self.target.draw(self.screen)
 
-            # Show parameters's information
+
             txt_margin = 20
             self.show_info("Score", 0, 20, txt_margin)
             self.show_info("Fitness", 0, 20, txt_margin * 2)
