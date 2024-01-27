@@ -126,6 +126,10 @@ class Target:
         self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT / 2)
         self.radius = radius
 
+    # Return current position
+    def get_position(self) -> tuple:
+        return (self.x, self.y)
+
     # Change location randomly
     def change_location(self):
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
@@ -252,10 +256,16 @@ class Drone:
         self.left_boost = BOOST
 
     # get input layer
-    def get_input(self) -> np.array:
+    def get_inputs(self) -> np.array:
+        std_len = 100 # px
+        x, y = self.target.get_position()
+        w, h = (self.centre_x - x) // std_len, (self.centre_y - y) // std_len
+        
+
         result = [1., 1., 1., 1., 0., 0., 0., 0.]
 
         return np.array(result)
+
 
     def run(self):
         running = True
@@ -289,7 +299,7 @@ class Drone:
 
             new_x, new_y = (0, 0)
             x, y = (0, 0)
-            centre_x, centre_y = (0, 0)
+            self.centre_x, self.centre_y = (0, 0)
 
             """
             Update
@@ -310,8 +320,8 @@ class Drone:
                 # Get angle between two nodes; index number 1 and 2.
                 if i == 1:
                     new_x, new_y = node.get_info()
-                    centre_x = new_x
-                    centre_y = new_y - 28
+                    self.centre_x = new_x
+                    self.centre_y = new_y - 28
                 elif i == 2:
                     x, y = node.get_info()
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
@@ -334,7 +344,7 @@ class Drone:
                 node.update(self.delta_t)
 
             # Check collision with drone
-            if self.target.collision(centre_x, centre_y):
+            if self.target.collision(self.centre_x, self.centre_y):
                 self.score += 1
                 self.fitness += 10
                 self.target.change_location()
