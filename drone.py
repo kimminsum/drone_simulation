@@ -1,6 +1,7 @@
 import pygame
 import random
 import math
+import numpy as np
 
 # Window setup
 WIDTH = 800
@@ -119,16 +120,21 @@ drone's final destination and reward when it approach.
 """
 class Target:
     def __init__(self, radius):
-        self._LIMIT = 100
+        self._LIMIT = 200
 
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT)
+        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT / 2)
         self.radius = radius
 
     # Change location randomly
     def change_location(self):
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
         self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT)
+
+    # Check collision with drone
+    def collision(self, x, y) -> bool:
+        dist = math.sqrt(math.pow((self.x - x), 2) + math.pow((self.y - y), 2)) # distance; (x^2 + y^2)^(1/2)
+        return (True if dist < self.radius else False)
 
     def draw(self, surf):
         pygame.draw.circle(surf, Colour["RED"], (int(self.x), int(self.y)), self.radius, 2)
@@ -137,15 +143,21 @@ class Target:
 
 
 class Drone:
-    def __init__(self, screen):
+    def __init__(self, screen, genome):
         self.screen = screen
-        
+
+        self.genome = genome
+
         # font
         self.font = pygame.font.Font(None, 22)
+
+        self.l_margin = 20 # left-margin
+        self.t_margin = 20 # top-margin
 
         # clock
         self.FPS = 60
         self.fpsClock = pygame.time.Clock()
+        self.ticks = 0
 
         # constraint number
         self.NUM_ITER = 10
@@ -163,6 +175,11 @@ class Drone:
         self.reset()
 
     def reset(self):
+        self.score = 0
+        self.fitness = 0
+
+        self.last_ticks = pygame.time.get_ticks()
+
         self.direction = 0 # Start direction is UP.
 
         self.Nodes = []
@@ -177,13 +194,13 @@ class Drone:
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
             y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
-    
+
             if i == 0: # 1, 2 angle x and y
                 p = Node(WIDTH * 0.5 + x, HEIGHT * START_HEIGHT + y, (Colour["RED"], Colour["RED"]))
                 p.fixed = False
             else:
                 p = Node(WIDTH * 0.5 + x, HEIGHT * START_HEIGHT + y, (Colour["WHITE"], Colour["RED"]))
-            
+
             self.Nodes.append(p)
 
         x = 28.28427 * 3
@@ -203,11 +220,12 @@ class Drone:
                     self.constraints.append(Constraint(row, column, self.Nodes))
 
     # Show infomation on window.
-    def show_info(self, title: str, data: float, x: int, y: int):
-        text = self.font.render(f"{title}: {data}", True, Colour["WHITE"])
+    def show_info(self, txt: str, x: int, y: int):
+        text = self.font.render(txt, True, Colour["WHITE"])
         textRect = text.get_rect()
         textRect.topleft = (x, y)
         self.screen.blit(text, textRect)
+
     """
     Next step
 
@@ -233,6 +251,11 @@ class Drone:
         self.right_boost = BOOST / 2
         self.left_boost = BOOST
 
+    # get input layer
+    def get_input(self) -> np.array:
+        result = [1., 1., 1., 1., 0., 0., 0., 0.]
+
+        return np.array(result)
 
     def run(self):
         running = True
@@ -266,9 +289,11 @@ class Drone:
 
             new_x, new_y = (0, 0)
             x, y = (0, 0)
-            center_x, center_y = (0, 0)
+            centre_x, centre_y = (0, 0)
 
-
+            """
+            Update
+            """
             # Update constraints
             for _ in range(self.NUM_ITER):
                 for i in range(len(self.constraints)):
@@ -279,13 +304,14 @@ class Drone:
                 # Reset condition
                 # -40 < angle < 40
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
+                    self.fitness -= 20
                     self.reset()
-                
+
                 # Get angle between two nodes; index number 1 and 2.
                 if i == 1:
                     new_x, new_y = node.get_info()
-                    center_x = new_x
-                    center_y = new_y - 28
+                    centre_x = new_x
+                    centre_y = new_y - 28
                 elif i == 2:
                     x, y = node.get_info()
                     self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
@@ -307,7 +333,14 @@ class Drone:
 
                 node.update(self.delta_t)
 
-
+            # Check collision with drone
+            if self.target.collision(centre_x, centre_y):
+                self.score += 1
+                self.fitness += 10
+                self.target.change_location()
+            """
+            Draw
+            """
             # Draw background
             self.screen.fill(Colour["GRAY"])
 
@@ -322,15 +355,32 @@ class Drone:
             # Draw target
             self.target.draw(self.screen)
 
+            # real-time clock
+            self.ticks = pygame.time.get_ticks() - self.last_ticks
+            millis = self.ticks % 1000
+            seconds = int(self.ticks / 1000 % 60)
+            minutes = int(self.ticks / 60000 % 24)
 
-            txt_margin = 20
-            self.show_info("Score", 0, 20, txt_margin)
-            self.show_info("Fitness", 0, 20, txt_margin * 2)
-            self.show_info("Angle", round(math.degrees(self.angle), 3), 20, txt_margin * 3) # angle; degrees
-            self.show_info("LB", round(self.left_boost, 3), 20, txt_margin * 4)             # left boost
-            self.show_info("RB", round(self.right_boost, 3), 20, txt_margin * 5)            # right boost
+            self.show_info(f"Timer {minutes:02d}:{seconds:02d}:{millis}", 20, 20)
+            """
+            List format
+            - text, parameter
+            """
+            display_list = [
+                ["Score", self.score],
+                ["Fitness", self.fitness],
+                ["Angle", round(math.degrees(self.angle), 3)],
+                ["LB", round(self.left_boost, 3)],
+                ["RB", round(self.right_boost, 3)]
+            ]
+            for i, data in enumerate(display_list):
+                self.show_info(f"{data[0]}: {data[1]}", self.l_margin, self.t_margin * (i + 2))
 
             pygame.display.update()
+
+            if __name__!="__main__":
+
+                return self.fitness, self.score
 
         pygame.quit()
 
@@ -344,5 +394,5 @@ if __name__=="__main__":
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
-    drone = Drone(screen)
+    drone = Drone(screen, genome=None)
     drone.run()
