@@ -12,7 +12,7 @@ REACTION = 0.0 # reaction rate; the more bigger, the less reaction
 
 BOOST = 20
 
-# Colour
+# colour
 Colour = {
     "BlACK": (0, 0, 0),
     "GRAY": (50, 50, 50),
@@ -123,19 +123,19 @@ class Target:
         self._LIMIT = 200
 
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT / 2)
+        self.y = random.randint(400, HEIGHT - self._LIMIT / 2)
         self.radius = radius
 
-    # Return current position
+    # return current position
     def get_position(self) -> tuple:
         return (self.x, self.y)
 
-    # Change location randomly
+    # change location randomly
     def change_location(self):
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT)
+        self.y = random.randint(400, HEIGHT - self._LIMIT)
 
-    # Check collision with drone
+    # check collision with drone
     def collision(self, x, y) -> bool:
         dist = math.sqrt(math.pow((self.x - x), 2) + math.pow((self.y - y), 2)) # distance; (x^2 + y^2)^(1/2)
         return (True if dist < self.radius else False)
@@ -184,7 +184,13 @@ class Drone:
 
         self.last_ticks = pygame.time.get_ticks()
 
-        self.direction = 0 # Start direction is UP.
+        self.direction = 0 # start direction is UP.
+        self.last_direction = 0
+
+
+        self.new_x, self.new_y = (0, 0)
+        self.centre_x, self.centre_y = (0, 0)
+
 
         self.Nodes = []
         self.constraints = []
@@ -194,7 +200,7 @@ class Drone:
         self.left_boost = BOOST
         self.right_boost = BOOST
 
-        # Set nodes' position
+        # set nodes' position
         for i in range(4):
             x = 40.0 * math.cos(math.radians(90) * i + math.radians(45))
             y = 40.0 * math.sin(math.radians(90) * i + math.radians(45))
@@ -217,13 +223,13 @@ class Drone:
         p = Node(WIDTH * 0.5 - x, HEIGHT * START_HEIGHT - y, (Colour["RED"], Colour["RED"]))
         self.Nodes.append(p)
 
-        # Connect constraints by 'graph'.
+        # connect constraints by 'graph'.
         for row in range(6):
             for column in range(row):
                 if (self.Graph[row][column] == 1):
                     self.constraints.append(Constraint(row, column, self.Nodes))
 
-    # Show infomation on window.
+    # show infomation on window.
     def show_info(self, txt: str, x: int, y: int):
         text = self.font.render(txt, True, Colour["WHITE"])
         textRect = text.get_rect()
@@ -257,13 +263,54 @@ class Drone:
 
     # get input layer
     def get_inputs(self) -> np.array:
-        std_len = 100 # px
-        x, y = self.target.get_position()
-        w, h = (self.centre_x - x) // std_len, (self.centre_y - y) // std_len
-        
+        std_len = 10 # standard pixel
 
         result = [1., 1., 1., 1., 0., 0., 0., 0.]
 
+        x, y = self.target.get_position()
+        w, h = (self.centre_x - x) // std_len, (self.centre_y - y) // std_len
+        
+        # target is on left
+        if w >= 0:
+            result[2] += 0.1 * w
+        # on right
+        else:
+            result[3] += 0.1 * w
+        
+        # target is on top
+        if h >= 0:
+            result[0] += 0.2 * h
+        # on bottom
+        else:
+            result[1] += 0.2 * h
+        
+
+        # redress the balance
+        if self.angle >= 20:
+            result[2] += 0.8
+            result[6] = 1               # LEFT
+        elif self.angle <= -20:
+            result[3] += 0.8
+            result[7] = 1               # RIGHT
+
+        # target is on right
+        elif (self.centre_x - x) <= 0:
+            result[2] += 0.2
+            result[6] = 1               # RIGHT
+        # on left
+        elif (self.centre_x - x) > 0:
+            result[3] += 0.2
+            result[7] = 1               # LEFT
+        # on bottom
+        elif (self.centre_y - y) <= 0:
+            result[1] += 0.4
+            result[5] = 1               # STOP
+        # on top
+        elif (self.centre_y - y) > 0:
+            result[0] += 0.4
+            result[4] = 1               # TOP
+
+        # print("Input: %s", result)
         return np.array(result)
 
 
@@ -275,6 +322,7 @@ class Drone:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    pygame.quit()
 
                 # key events
                 if __name__=="__main__" and event.type == pygame.KEYDOWN:
@@ -287,82 +335,124 @@ class Drone:
                     elif event.key == pygame.K_RIGHT:
                         self.direction = 3
 
-            if self.direction == 0:   # UP
+
+            if __name__!="__main__" and self.genome != None:
+                inputs = self.get_inputs()
+                outputs = self.genome.forward(inputs)
+                outputs = np.argmax(outputs)
+
+                # UP
+                if outputs == 0:
+                    self.direction = 0
+                # STOP
+                elif outputs == 1:
+                    self.direction = 1
+                # LEFT
+                elif outputs == 2:
+                    self.direction = 2
+                # RIGHT
+                elif outputs == 3:
+                    self.direction = 3
+            
+
+            x, y = self.target.get_position()
+            
+            fit_std = 15
+            # UP
+            if self.direction == 0:
                 self.go_up()
-            elif self.direction == 1: # STOP
+                if self.direction != self.last_direction and (self.centre_y - y) >= 0:
+                    self.fitness += fit_std
+                elif self.direction != self.last_direction:
+                    self.fitness -= fit_std
+            # STOP
+            elif self.direction == 1: 
                 self.go_stop()
-            elif self.direction == 2: # LEFT
+                if self.direction != self.last_direction and (self.centre_y - y) < 0:
+                    self.fitness += fit_std
+                elif self.direction != self.last_direction:
+                    self.fitness -= fit_std
+             # LEFT
+            elif self.direction == 2:
                 self.go_left()
-            elif self.direction == 3: # RIGHT
+                if self.direction != self.last_direction and (self.centre_x - x) >= 0:
+                    self.fitness += fit_std
+                elif self.direction != self.last_direction:
+                    self.fitness -= fit_std
+            # RIGHT
+            elif self.direction == 3: 
                 self.go_right()
+                if self.direction != self.last_direction and (self.centre_x - x) < 0:
+                    self.fitness += fit_std
+                elif self.direction != self.last_direction:
+                    self.fitness -= fit_std
 
-
-            new_x, new_y = (0, 0)
-            x, y = (0, 0)
-            self.centre_x, self.centre_y = (0, 0)
+            self.last_direction = self.direction
 
             """
             Update
             """
-            # Update constraints
+            # update constraints
             for _ in range(self.NUM_ITER):
                 for i in range(len(self.constraints)):
                     self.constraints[i].update()
 
-            # Update nodes
+            # update nodes
             for i, node in enumerate(self.Nodes):
-                # Reset condition
+                # Reset Condition
                 # -40 < angle < 40
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
-                    self.fitness -= 20
-                    self.reset()
+                    self.fitness -= 50
+                    running = False
+                    # self.reset()
 
-                # Get angle between two nodes; index number 1 and 2.
+                # get angle between two nodes; index number 1 and 2
                 if i == 1:
-                    new_x, new_y = node.get_info()
-                    self.centre_x = new_x
-                    self.centre_y = new_y - 28
+                    self.new_x, self.new_y = node.get_info()
+                    self.centre_x = self.new_x
+                    self.centre_y = self.new_y - 28
                 elif i == 2:
                     x, y = node.get_info()
-                    self.angle = math.atan2(new_y - y, new_x - x) - math.pi / 2 # get angle
+                    self.angle = math.atan2(self.new_y - y, self.new_x - x) - math.pi / 2 # get angle
 
 
-                # Set right boost vector.
+                # set right boost vector
                 if i == 0:
                     vec_x = self.right_boost * math.sin(self.angle)
-                    # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
+                    # since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity
                     vec_y = GRAVITY - self.right_boost * math.cos(self.angle)
                     node.change_boost(vec_x, vec_y)
 
-                # Set left boost vector.
+                # set left boost vector
                 elif i == 5:
                     vec_x = self.left_boost * math.sin(self.angle)
-                    # Since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity. 
+                    # since the force opposing the Earth's gravity is input, it was calculated by subtracting the value from the gravity 
                     vec_y = GRAVITY - self.left_boost * math.cos(self.angle)
                     node.change_boost(vec_x, vec_y)
 
                 node.update(self.delta_t)
 
-            # Check collision with drone
+            # check collision with drone
             if self.target.collision(self.centre_x, self.centre_y):
                 self.score += 1
-                self.fitness += 10
+                self.fitness += 30
                 self.target.change_location()
+
             """
             Draw
             """
-            # Draw background
+            # draw background
             self.screen.fill(Colour["GRAY"])
 
-            # Draw constraints
+            # draw constraints
             for i in range(len(self.constraints)):
                 self.constraints[i].draw(self.screen, 1)
 
-            # Draw nodes
+            # draw nodes
             for i in range(len(self.Nodes)):
                 self.Nodes[i].draw(self.screen, 4)
 
-            # Draw target
+            # draw target
             self.target.draw(self.screen)
 
             # real-time clock
@@ -370,6 +460,9 @@ class Drone:
             millis = self.ticks % 1000
             seconds = int(self.ticks / 1000 % 60)
             minutes = int(self.ticks / 60000 % 24)
+
+            # if seconds % 5 == 0:
+            #     self.fitness += 5
 
             self.show_info(f"Timer {minutes:02d}:{seconds:02d}:{millis}", 20, 20)
             """
@@ -387,12 +480,8 @@ class Drone:
                 self.show_info(f"{data[0]}: {data[1]}", self.l_margin, self.t_margin * (i + 2))
 
             pygame.display.update()
-
-            if __name__!="__main__":
-
-                return self.fitness, self.score
-
-        pygame.quit()
+        
+        return self.fitness, self.score
 
 
 if __name__=="__main__":
@@ -404,5 +493,8 @@ if __name__=="__main__":
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32)
 
-    drone = Drone(screen, genome=None)
-    drone.run()
+    while True:
+        drone = Drone(screen, genome=None)
+        fitness, score = drone.run()
+
+        print(f"Fitness: {fitness}, Score: {score}")

@@ -5,10 +5,10 @@ class Genome():
         self.fitness = 0
 
         hidden_layer = 10
-        self.w1 = np.random.randn(6, hidden_layer)
+        self.w1 = np.random.randn(8, hidden_layer)
         self.w2 = np.random.randn(hidden_layer, 20)
         self.w3 = np.random.randn(20, hidden_layer)
-        self.w4 = np.random.randn(hidden_layer, 3)
+        self.w4 = np.random.randn(hidden_layer, 4)
 
     def forward(self, inputs):
         net = np.matmul(inputs, self.w1)
@@ -19,6 +19,7 @@ class Genome():
         net = self.relu(net)
         net = np.matmul(net, self.w4)
         net = self.softmax(net)
+    
         return net
 
     def relu(self, x):
