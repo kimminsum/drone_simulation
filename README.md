@@ -51,7 +51,7 @@
 
 ## IV. Learning Attempt
 
-### 1. Version 1.0 
+### 1. Version 1.0 - 2024.02.07.
 Since the weight ratio of UP, STOP, LEFT, and RIGHT increases in multiples of 0.2, 
 the drone should move left and right, but it tends to move only up and down.
 
