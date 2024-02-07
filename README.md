@@ -23,13 +23,13 @@
 
 ## I. Physics
 
-- Reference: Verlet Algorithm
-  <br> This algorithm works as tree structure that node is vertex and trunk is side.
+Reference: Verlet Algorithm
+This algorithm works as tree structure that node is vertex and trunk is side.
 
 
 ## II. Drone Structure
 
-  The table shows how the nodes are connected.
+The table shows how the nodes are connected.
 
 |     | 0   | 1   | 2   | 3   | 4   | 5   |
 | --- | --- | --- | --- | --- | --- | --- |
