@@ -20,10 +20,12 @@
 | Math        | math         |
 | ETC         | sys          |
 
+
 ## I. Physics
 
 - Reference: Verlet Algorithm
   <br> This algorithm works as tree structure that node is vertex and trunk is side.
+
 
 ## II. Drone Structure
 
@@ -38,6 +40,7 @@
 | 4   | 1   | 1   | 1   | 0   | 0   | 1   |
 | 5   | 0   | 1   | 1   | 1   | 1   | 0   |
 
+
 ## III. CNN Structure
 
 - Input Layer (8 inputs)
@@ -49,9 +52,11 @@
 
 [UP, STOP, LEFT, RIGHT, UP-weight, STOP-weight, LEFT-weight, RIGHT-weight]
 
+
 ## IV. Learning Attempt
 
 ### 1. Version 1.0 - 2024.02.07.
+
 Since the weight ratio of UP, STOP, LEFT, and RIGHT increases in multiples of 0.2, 
 the drone should move left and right, but it tends to move only up and down.
 
@@ -60,3 +65,7 @@ which is the standard length on the top, bottom, left and right * as the default
 but due to acceleration up and down, the weight value was focused on UP and STOP.
 
 This seems to be possible to solve by adjusting the weight values ​​on the left and right.
+
+### 2. Version 1.1 - 2024.02.08.
+
+I'll add more fitness on border.
