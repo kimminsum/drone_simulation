@@ -7,10 +7,10 @@ import numpy as np
 WIDTH = 800
 HEIGHT = 600
 GRAVITY = 5
-START_HEIGHT = 0.9 # topside is standard
+START_HEIGHT = 0.7# topside is standard
 REACTION = 0.0 # reaction rate; the more bigger, the less reaction
 
-BOOST = 20
+BOOST = 18
 
 # colour
 Colour = {
@@ -123,7 +123,7 @@ class Target:
         self._LIMIT = 200
 
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(400, HEIGHT - self._LIMIT / 2)
+        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT // 2)
         self.radius = radius
 
     # return current position
@@ -133,7 +133,7 @@ class Target:
     # change location randomly
     def change_location(self):
         self.x = random.randint(self._LIMIT, WIDTH - self._LIMIT)
-        self.y = random.randint(400, HEIGHT - self._LIMIT)
+        self.y = random.randint(self._LIMIT, HEIGHT - self._LIMIT // 2)
 
     # check collision with drone
     def collision(self, x, y) -> bool:
@@ -176,9 +176,6 @@ class Drone:
         ]
         self.delta_t = 0.1
 
-        self.reset()
-
-    def reset(self):
         self.score = 0
         self.fitness = 0
 
@@ -263,7 +260,7 @@ class Drone:
 
     # get input layer
     def get_inputs(self) -> np.array:
-        std_len = 10 # standard pixel
+        std_len = 100 # standard pixel
 
         result = [1., 1., 1., 1., 0., 0., 0., 0.]
 
@@ -272,10 +269,10 @@ class Drone:
         
         # target is on left
         if w >= 0:
-            result[2] += 0.1 * w
+            result[2] += 0.2 * w
         # on right
         else:
-            result[3] += 0.1 * w
+            result[3] += 0.2 * w
         
         # target is on top
         if h >= 0:
@@ -286,11 +283,11 @@ class Drone:
         
 
         # redress the balance
-        if self.angle >= 20:
-            result[2] += 0.8
+        if math.degrees(self.angle) >= 15:
+            result[2] += 0.3
             result[6] = 1               # LEFT
-        elif self.angle <= -20:
-            result[3] += 0.8
+        elif math.degrees(self.angle) <= -15:
+            result[3] += 0.3
             result[7] = 1               # RIGHT
 
         # target is on right
@@ -303,11 +300,11 @@ class Drone:
             result[7] = 1               # LEFT
         # on bottom
         elif (self.centre_y - y) <= 0:
-            result[1] += 0.4
+            result[1] += 0.3
             result[5] = 1               # STOP
         # on top
         elif (self.centre_y - y) > 0:
-            result[0] += 0.4
+            result[0] += 0.3
             result[4] = 1               # TOP
 
         # print("Input: %s", result)
@@ -357,19 +354,19 @@ class Drone:
 
             x, y = self.target.get_position()
             
-            fit_std = 15
+            fit_std = 5
             # UP
             if self.direction == 0:
                 self.go_up()
                 if self.direction != self.last_direction and (self.centre_y - y) >= 0:
-                    self.fitness += fit_std
+                    self.fitness += fit_std + 5
                 elif self.direction != self.last_direction:
                     self.fitness -= fit_std
             # STOP
             elif self.direction == 1: 
                 self.go_stop()
                 if self.direction != self.last_direction and (self.centre_y - y) < 0:
-                    self.fitness += fit_std
+                    self.fitness += fit_std + 5
                 elif self.direction != self.last_direction:
                     self.fitness -= fit_std
              # LEFT
@@ -379,6 +376,10 @@ class Drone:
                     self.fitness += fit_std
                 elif self.direction != self.last_direction:
                     self.fitness -= fit_std
+
+                    if math.degrees(self.angle) <= -15:
+                        self.fitness -= 5
+
             # RIGHT
             elif self.direction == 3: 
                 self.go_right()
@@ -386,6 +387,9 @@ class Drone:
                     self.fitness += fit_std
                 elif self.direction != self.last_direction:
                     self.fitness -= fit_std
+
+                    if math.degrees(self.angle) >= 15:
+                        self.fitness -= 5
 
             self.last_direction = self.direction
 
@@ -402,7 +406,7 @@ class Drone:
                 # Reset Condition
                 # -40 < angle < 40
                 if node.get_collision() or math.degrees(self.angle) >= 40 or math.degrees(self.angle) <= -40:
-                    self.fitness -= 50
+                    self.fitness -= 30
                     running = False
                     # self.reset()
 
@@ -435,7 +439,7 @@ class Drone:
             # check collision with drone
             if self.target.collision(self.centre_x, self.centre_y):
                 self.score += 1
-                self.fitness += 30
+                self.fitness += 20
                 self.target.change_location()
 
             """
@@ -461,8 +465,8 @@ class Drone:
             seconds = int(self.ticks / 1000 % 60)
             minutes = int(self.ticks / 60000 % 24)
 
-            # if seconds % 5 == 0:
-            #     self.fitness += 5
+            if seconds % 3 == 1 and millis % 1000 <= 25:
+                self.fitness += 5
 
             self.show_info(f"Timer {minutes:02d}:{seconds:02d}:{millis}", 20, 20)
             """

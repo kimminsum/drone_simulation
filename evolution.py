@@ -6,8 +6,8 @@ from drone import Drone, WIDTH, HEIGHT
 from genome import Genome
 
 
-N_POPULATION = 15
-N_BEST = 3
+N_POPULATION = 20
+N_BEST = 5
 N_CHILDREN = 5
 PROB_MUTATION = 0.4
 
@@ -37,6 +37,7 @@ while True:
     genomes.sort(key=lambda x: x.fitness, reverse=True)
 
     print('===== Generaton #%s\tBest Fitness %s =====' % (n_gen, genomes[0].fitness))
+    # print(genomes[0].w1, genomes[0].w2, genome[0].w)
 
     best_genomes = deepcopy(genomes[:N_BEST])
 
