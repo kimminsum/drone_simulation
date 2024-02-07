@@ -47,16 +47,16 @@
 
 ### Input Layer Structure
 
-  [UP, STOP, LEFT, RIGHT, UP-weight, STOP-weight, LEFT-weight, RIGHT-weight]
+[UP, STOP, LEFT, RIGHT, UP-weight, STOP-weight, LEFT-weight, RIGHT-weight]
 
-## Learning Attempt
+## IV. Learning Attempt
 
 ### 1. Version 1.0 
-  Since the weight ratio of UP, STOP, LEFT, and RIGHT increases in multiples of 0.2, 
-  the drone should move left and right, but it tends to move only up and down.
+Since the weight ratio of UP, STOP, LEFT, and RIGHT increases in multiples of 0.2, 
+the drone should move left and right, but it tends to move only up and down.
 
-  I tried to solve this problem by calculating a multiple of 100px, 
-  which is the standard length on the top, bottom, left and right * as the default weight value, 
-  but due to acceleration up and down, the weight value was focused on UP and STOP.
+I tried to solve this problem by calculating a multiple of 100px, 
+which is the standard length on the top, bottom, left and right * as the default weight value, 
+but due to acceleration up and down, the weight value was focused on UP and STOP.
 
-  This seems to be possible to solve by adjusting the weight values ​​on the left and right.
+This seems to be possible to solve by adjusting the weight values ​​on the left and right.
